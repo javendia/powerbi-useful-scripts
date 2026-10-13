@@ -16,14 +16,14 @@ using System.Text.RegularExpressions;
 
 */
 
-// 1. Collect existing data source names to replace their references in M partitions
+// Collect existing data source names to replace their references in M partitions
 var dataSourceNames = new List<string>();
 foreach (var ds in Model.DataSources)
 {
     dataSourceNames.Add(ds.Name);
 }
 
-// 2. Prompt user for target server and database
+// Prompt user for target server and database
 string __ServerName = Interaction.InputBox(
     Prompt: "Enter name for the server:",
     Title: "Server",
@@ -46,7 +46,7 @@ if (string.IsNullOrWhiteSpace(__DatabaseName))
     return;
 }
 
-// 3. Compatibility Level & Power BI V3 Configuration
+// Constants
 var __CompatibilityLevel = 1550;
 var __DefaultPowerBIDataSourceVersion = PowerBIDataSourceVersion.PowerBI_V3;
 
@@ -54,7 +54,7 @@ Model.Database.CompatibilityLevel = __CompatibilityLevel;
 Model.DefaultPowerBIDataSourceVersion = __DefaultPowerBIDataSourceVersion;
 Model.SetAnnotation("__PBI_TimeIntelligenceEnabled", "0");
 
-// 4. Transform M Partitions without destroying existing logic (Navigation, Value.NativeQuery, etc.)
+// Transform M partitions without destroying existing logic (Navigation, Value.NativeQuery, etc.)
 string sqlDbExpr = string.Format("Sql.Database(\"{0}\", \"{1}\")", 
     __ServerName.Replace("\"", "\"\""), 
     __DatabaseName.Replace("\"", "\"\""));
@@ -98,7 +98,7 @@ foreach (var t in Model.Tables)
     }
 }
 
-// 5. Clean up roles for Power BI Desktop compatibility
+// Clean up roles for Power BI Desktop compatibility
 foreach (var r in Model.Roles.ToList())
 {
     // Windows domain user / SID member definitions are not supported in Power BI Desktop (managed in Power BI Service)
@@ -114,13 +114,13 @@ foreach (var r in Model.Roles.ToList())
     }
 }
 
-// 6. Delete existing data sources (Power BI V3 models do not use Model.DataSources)
+// Delete existing data sources (Power BI V3 models do not use Model.DataSources)
 while (Model.DataSources.Count > 0)
 {
     Model.DataSources[0].Delete();
 }
 
-// 7. Summary
+// Summary
 Info(string.Format("Migration to Power BI completed successfully!\n\n- Converted M Partitions: {0}\n- Data Sources removed: {1}\n- Compatibility Level: {2}\n- Target: {3} / {4}", 
     convertedPartitionsCount, 
     dataSourceNames.Count, 
