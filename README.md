@@ -18,23 +18,17 @@ Scripts to automate actions over a tabular model
 
 - 🔗 **[tabular/BimToPBIP.csx](https://github.com/javendia/Fabric/blob/main/tabular/BimToPBIP.csx)**
     - **Description**
-        
         Script to convert an on-premises Microsoft SQL Server Analysis Services tabular model to a Power BI project (.pbip)
     - **Prerequisites**
-        
         - [Tabular Editor 2.x](https://github.com/TabularEditor/TabularEditor/releases)
         - An empty Power BI project (.pbip)
-        - A dictionary, which assigns the data source (table or view) for each entity model
     - **How it works**
-        
         - The first step is to extract the metadata from the tabular model. We can get it using Tabular Editor as follows:
-          
             1. Connect with the desired tabular model
             
                <p align="center">
                  <img src="./tabular/media/tabular-01.png" alt="Connect to tabular model">
                </p>
-            
             2. Save metadata
             
                <p align="center">
@@ -44,16 +38,12 @@ Scripts to automate actions over a tabular model
                  <img src="./tabular/media/tabular-03.png" alt="Save metadata step 2">
                </p>
             
-        - Secondly, we need to fill a dictionary CSV file, where each key-value represents an entity model and its data source (table or view)
-        - Then, we will open the extracted tabular model and finally run the script on Tabular Editor. The script prompts you for three values:
-            - The SQL connection string to the lakehouse SQL endpoint, used as destination server
-            - Lakehouse name, used as destination database
-            - The path to the dictionary
+        - Secondly, we will open the extracted tabular model and finally run the script on Tabular Editor. The script prompts you for three values:
+            - The server name for the destination SQL database
+            - The database name for the destination SQL database
     - **Limitations**
-        
         - The compatibility level must be higher or equal than 1500
-        - It is planned to work with a single SQL data source
-        - The script transforms default partitions. Custom partitions must be migrated manually
+        - It is planned to work with SQL data sources only
 
 ### 📁 [pbi](https://github.com/javendia/Fabric/blob/main/pbi)
 
