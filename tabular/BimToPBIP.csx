@@ -93,7 +93,7 @@ foreach (var t in Model.Tables)
         p.RemoveAnnotation("QueryEditorSerialization");
 
         p.Expression = mExpr;
-        p.Mode = ModeType.Import;
+
         convertedPartitionsCount++;
     }
 }
