@@ -38,7 +38,7 @@ Scripts to automate actions over a tabular model
                  <img src="./tabular/media/tabular-03.png" alt="Save metadata step 2">
                </p>
             
-        - Secondly, we will open the extracted tabular model and finally run the script on Tabular Editor. The script prompts you for three values:
+        - Secondly, we will open the extracted tabular model and finally run the script on Tabular Editor. The script prompts you for two values:
             - The server name for the destination SQL database
             - The database name for the destination SQL database
     - **Limitations**
