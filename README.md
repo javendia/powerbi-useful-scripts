@@ -42,7 +42,7 @@ Scripts to automate actions over a tabular model
             - The server name for the destination SQL database
             - The database name for the destination SQL database
     - **Limitations**
-        - The compatibility level must be higher or equal than 1500
+        - The compatibility level must be higher or equal than 1400 (SQL Server Analysis Services 2017 or later)
         - It is planned to work with SQL data sources only
 
 ### 📁 [pbi](https://github.com/javendia/Fabric/blob/main/pbi)
