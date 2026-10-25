@@ -4,7 +4,7 @@
 .DESCRIPTION
     1. Signs in with a Microsoft account (no Power BI / Microsoft Fabric admin role required).
     2. Lists the connections and flags them as:
-         - No permission: you are not the owner of the connection (User, UserWithReshare...), so it is not checked.
+         - No permission: you are neither the owner of the connection nor an admin of its gateway, so it is not checked.
          - Broken: the Power BI "Get Datasource Status" API returns an error.
          - Unused: no item in any of your workspaces uses it (Microsoft Fabric "List Item Connections" API).
     3. Shows the result (Connection name, Type, Status) in the terminal or exports it to Excel.
@@ -13,7 +13,7 @@
     Author: Javier Buendía Carrera
     - The connections of an item can only be read with write permission on it. The script warns about the items it could not check.
     - The status of virtual network gateway connections cannot be checked, so they are only evaluated by usage.
-    - Gateway admins who are not owners of a connection see it as "No permission", even though they could delete it.
+    - Virtual network gateway admins who are not owners of a connection see it as "No permission", even though they could delete it.
 .EXAMPLE
     .\CleanupConnections.ps1
 #>
@@ -36,7 +36,7 @@ $MaxParallelism = 10                        # Parallel API calls
 $MaxRetries = 5                             # Retries when the API rate limit is reached (HTTP 429)
 $DefaultRetrySeconds = 30                   # Wait between retries if the API does not send Retry-After
 
-$ManageableRole = 'Owner'                   # Connection role (myRole) needed to manage and delete a connection
+$ManageableRole = 'Owner'                   # Connection role
 $ItemsNotInScope = 'Report', 'Dashboard'
 $UncheckableConnectivityTypes = 'VirtualNetworkGateway', 'StreamingVirtualNetworkGateway'   # Not supported by the status API
 
@@ -125,21 +125,22 @@ function Get-BrokenConnections([object[]]$Connections, [hashtable]$Headers) {
     $statusChecks = Invoke-Api ($Connections | Where-Object connectivityType -NotIn $UncheckableConnectivityTypes | ForEach-Object {
         @{ Uri = "$PowerBIApi/gateways/$($_.gatewayId)/datasources/$($_.id)/status"; Id = $_.id }
     }) $Headers
-    # 
     ($statusChecks | Where-Object StatusCode -EQ 400).Request.Id
 }
 
 function Get-ConnectionsReport([hashtable]$FabricHeader, [hashtable]$PowerBIHeader) {
     $connections = (Invoke-Api @{ Uri = "$FabricApi/connections" } $FabricHeader -ThrowOnError).Response
-    $manageable = @($connections | Where-Object myRole -EQ $ManageableRole)
-    Write-Host "Found $($connections.Count) connections ($($manageable.Count) owned by you). Checking usage and status..."
+    $adminGatewayIds = (Invoke-Api @{ Uri = "$PowerBIApi/gateways" } $PowerBIHeader -ThrowOnError).Response.id
+    $manageable = @($connections | Where-Object { $_.myRole -eq $ManageableRole -or $_.gatewayId -in $adminGatewayIds })
+    Write-Host "Found $($connections.Count) connections ($($manageable.Count) you can manage). Checking usage and status..."
+    
     if (-not $connections) { return }
 
     $brokenIds = [System.Collections.Generic.HashSet[string]]@(Get-BrokenConnections $manageable $PowerBIHeader)
     $usedIds = [System.Collections.Generic.HashSet[string]]@(if ($manageable) { Get-UsedConnections $FabricHeader })
 
     $report = foreach ($connection in $connections) {
-        $status = if ($connection.myRole -ne $ManageableRole) { 'No permission' }
+        $status = if ($connection -notin $manageable) { 'No permission' }
                   elseif ($brokenIds.Contains($connection.id)) { $StatusBroken }
                   elseif (-not $usedIds.Contains($connection.id)) { $StatusUnused }
         if (-not $status) { continue }
@@ -183,6 +184,7 @@ function Remove-Connections([object[]]$Report, [hashtable]$Headers) {
     $results = @(Invoke-Api ($selected | ForEach-Object {
         @{ Uri = "$FabricApi/connections/$($_.Id)"; Name = $_.'Connection name' }
     }) $Headers -Method Delete)
+
     foreach ($result in $results) {
         if ($result.StatusCode -lt 400) { Write-Host "Deleted: $($result.Request.Name)" -ForegroundColor Green }
         else { Write-Warning "Could not delete '$($result.Request.Name)': HTTP $($result.StatusCode) $($result.Error.message)" }

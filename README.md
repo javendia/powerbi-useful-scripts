@@ -79,11 +79,11 @@ Scripts to perform actions over Power BI reports.
         - [PowerShell 7.x](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows).
         - Modules `Az.Accounts` and `ImportExcel` (installed automatically for the current user if missing).
         - No Power BI / Microsoft Fabric admin role is required: the script works with the permissions of the signed-in user.
-        - Owner role on the connections to check and delete them, and access to the workspaces where they may be used.
+        - Owner role on the connections, or admin role on their gateway, to check and delete them, and access to the workspaces where they may be used.
     - **How it works**
         
         - Signs in to Power BI with your Microsoft account.
-        - Lists the connections with the Microsoft Fabric REST API. Connections you do not own (`User`, `UserWithReshare`...) are not checked and are reported as `No permission`.
+        - Lists the connections with the Microsoft Fabric REST API. Connections you neither own nor manage as gateway admin are not checked and are reported as `No permission`.
         - For the connections you own, checks their status with the Power BI API (`Get Datasource Status`) and their usage by scanning the items of every workspace you have access to (`List Item Connections`).
         - Builds a table with the connection name, type and status (`Broken`, `Unused` or `No permission`) and asks whether to show it in the terminal or export it to Excel (saved in the current directory).
         - Finally, asks whether to delete any of the broken or unused connections.
@@ -91,7 +91,7 @@ Scripts to perform actions over Power BI reports.
         
         - The connections of an item can only be read with write permission on it. The script warns about the items it could not check.
         - The status of virtual network gateway connections cannot be checked, so they are only evaluated by usage.
-        - Gateway admins who are not owners of a connection see it as `No permission`, even though they could delete it.
+        - Virtual network gateway admins who are not owners of a connection see it as `No permission`, even though they could delete it.
 
 ## 📄 License
 
